@@ -12,6 +12,14 @@ import warnings
 from threading import Event
 import re
 
+# Rich imports for ASCII art
+try:
+    from rich.console import Console
+    from rich.text import Text
+    RICH_AVAILABLE = True
+except ImportError:
+    RICH_AVAILABLE = False
+
 # Third-party imports
 import numpy as np
 from ebooklib import epub, ITEM_DOCUMENT
@@ -28,6 +36,36 @@ warnings.filterwarnings("ignore", category=FutureWarning, module='ebooklib')
 # Global flag to stop the spinner and audio
 stop_spinner = False
 stop_audio = False
+
+# Define version as a variable to make updates easier
+VERSION = "2.4.4"
+
+def print_gradient_logo():
+    """Print the Kokoro Desktop ASCII art logo with gradient colors."""
+    if not RICH_AVAILABLE:
+        print("KOKORO DESKTOP")
+        print(f"Version {VERSION}")
+        return
+
+    console = Console()
+
+    # We define the characters with a color gradient
+    heart_lines = [
+        "      ▄▄▄▄      ▄▄▄▄      ",
+        "    ████████  ████████    ",
+        f"    ██████████████████    K O K O R O  D E S K T O P",
+        f"    ▀████████████████▀    --------------------------",
+        f"      ▀████████████▀      Status:  Available on PyPI",
+        f"        ▀████████▀        Version: {VERSION}",
+        f"          ▀████▀          Source:  GitHub",
+        f"            ▀▀            "
+    ]
+
+    for i, line in enumerate(heart_lines):
+        # This creates a vertical gradient from Magenta (top) to Cyan (bottom)
+        color = f"rgb({150 - i*15},{50 + i*20},{255})"
+        console.print(line, style=color)
+
 
 def check_required_files(model_path="kokoro-v1.0.onnx", voices_path="voices-v1.0.bin"):
     """Check if required model files exist and provide helpful error messages."""

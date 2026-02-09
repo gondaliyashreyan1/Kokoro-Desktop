@@ -299,3 +299,8 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - Added web-based GUI with modern interface
 - Fixed voice processing for multi-voice blending
 - Implemented automatic weight normalization
+
+### Version 2.4.4
+- Added ASCII art logo with rich formatting
+- Added version variable for easier updates
+- Included rich as dependency for enhanced visuals
