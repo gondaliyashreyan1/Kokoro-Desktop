@@ -1,7 +1,7 @@
 [project]
-name = "kokoro-tts"
-version = "2.3.0"
-description = "A CLI text-to-speech tool using the Kokoro model, supporting multiple languages, voices (with blending), and various input formats including EPUB books and PDF documents."
+name = "kokoro-desktop"
+version = "2.4.0"
+description = "A CLI text-to-speech tool using the Kokoro model, supporting multiple languages, voices (with advanced multi-voice blending), and various input formats including EPUB books and PDF documents."
 readme = "README.md"
 requires-python = ">=3.9, <3.13"
 license = {text = "MIT"}
@@ -33,16 +33,19 @@ dependencies = [
 ]
 
 [project.scripts]
-kokoro-tts = "kokoro_tts:main"
+kokoro-desktop = "kokoro_tts:main"
 
 [project.urls]
-Homepage = "https://github.com/nazdridoy/kokoro-tts"
-Repository = "https://github.com/nazdridoy/kokoro-tts"
-Issues = "https://github.com/nazdridoy/kokoro-tts/issues"
+Homepage = "https://github.com/gondaliyashreyan1/Kokoro-Desktop"
+Repository = "https://github.com/gondaliyashreyan1/Kokoro-Desktop"
+Issues = "https://github.com/gondaliyashreyan1/Kokoro-Desktop/issues"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["kokoro_tts"]
 
 [dependency-groups]
 dev = [

@@ -179,6 +179,7 @@ Examples:
     kokoro-tts input.txt --stream --speed 0.8
     kokoro-tts input.txt output.wav --voice "af_sarah:60,am_adam:40"
     kokoro-tts input.txt --stream --voice "am_adam,af_sarah" # 50-50 blend
+    kokoro-tts input.txt --stream --voice "am_adam:40,af_sarah:35,en_alice:25" # 3-way blend
     kokoro-tts --merge-chunks --split-output ./chunks/ --format wav
     kokoro-tts --help-voices
     kokoro-tts --help-languages
@@ -217,18 +218,18 @@ def print_supported_voices(model_path="kokoro-v1.0.onnx", voices_path="voices-v1
 
 def validate_voice(voice, kokoro):
     """Validate if the voice is supported and handle voice blending.
-    
-    Format for blended voices: "voice1:weight,voice2:weight"
-    Example: "af_sarah:60,am_adam:40" for 60-40 blend
+
+    Format for blended voices: "voice1:weight,voice2:weight,voice3:weight,..."
+    Example: "af_sarah:40,am_adam:35,en_alice:25" for 40-35-25 blend of three voices
     """
     try:
         supported_voices = set(kokoro.get_voices())
-        
-        # Parse comma seperated voices for blend
+
+        # Parse comma separated voices for blend
         if ',' in voice:
             voices = []
             weights = []
-            
+
             # Parse voice:weight pairs
             for pair in voice.split(','):
                 if ':' in pair:
@@ -238,27 +239,25 @@ def validate_voice(voice, kokoro):
                 else:
                     voices.append(pair.strip())
                     weights.append(50.0)  # Default to 50% if no weight specified
-            
-            if len(voices) != 2:
-                raise ValueError("voice blending needs two comma separated voices")
-                 
+
             # Validate voice
             for v in voices:
                 if v not in supported_voices:
                     supported_voices_list = ', '.join(sorted(supported_voices))
                     raise ValueError(f"Unsupported voice: {v}\nSupported voices are: {supported_voices_list}")
-             
+
             # Normalize weights to sum to 100
             total = sum(weights)
             if total != 100:
                 weights = [w * (100/total) for w in weights]
-            
-            # Create voice blend style
-            style1 = kokoro.get_voice_style(voices[0])
-            style2 = kokoro.get_voice_style(voices[1])
-            blend = np.add(style1 * (weights[0]/100), style2 * (weights[1]/100))
+
+            # Create voice blend style for multiple voices
+            blend = np.zeros_like(kokoro.get_voice_style(voices[0]))  # Initialize with zeros
+            for i, v in enumerate(voices):
+                style = kokoro.get_voice_style(v)
+                blend = np.add(blend, style * (weights[i]/100))
             return blend
-             
+
         # Single voice validation
         if voice not in supported_voices:
             supported_voices_list = ', '.join(sorted(supported_voices))
@@ -838,16 +837,17 @@ def convert_text_to_audio(input_file, output_file=None, voice=None, speed=1.0, l
                 # Interactive voice selection
                 voices = list_available_voices(kokoro)
                 print("\nHow to choose a voice:")
-                print("You can use either a single voice or blend two voices together.")
+                print("You can use either a single voice or blend multiple voices together.")
                 print("\nFor a single voice:")
                 print("  • Just enter one number (example: '7')")
-                print("\nFor blending two voices:")
-                print("  • Enter two numbers separated by comma")
+                print("\nFor blending multiple voices:")
+                print("  • Enter multiple numbers separated by comma")
                 print("  • Optionally add weights after each number using ':weight'")
                 print("\nExamples:")
                 print("  • '7'      - Use voice #7 only")
                 print("  • '7,11'   - Mix voices #7 and #11 equally (50% each)")
                 print("  • '7:60,11:40' - Mix 60% of voice #7 with 40% of voice #11")
+                print("  • '7:40,11:35,3:25' - Mix 40% of voice #7, 35% of voice #11, and 25% of voice #3")
                 try:
                     voice_input = input("Choose voice(s) by number: ")
                     if ',' in voice_input:

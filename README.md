@@ -1,6 +1,6 @@
-# Kokoro TTS
+# Kokoro Desktop
 
-A CLI text-to-speech tool using the Kokoro model, supporting multiple languages, voices (with blending), and various input formats including EPUB books and PDF documents.
+A CLI text-to-speech tool using the Kokoro model, supporting multiple languages, voices (with advanced multi-voice blending), and various input formats including EPUB books and PDF documents.
 
 ![ngpt-s-c](https://raw.githubusercontent.com/nazdridoy/kokoro-tts/main/previews/kokoro-tts-h.png)
 
@@ -186,7 +186,8 @@ kokoro-tts <input_text_file> [<output_audio_file>] [options]
 - `--lang <str>`: Set language (default: en-us)
 - `--voice <str>`: Set voice or blend voices (default: interactive selection)
   - Single voice: Use voice name (e.g., "af_sarah")
-  - Blended voices: Use "voice1:weight,voice2:weight" format
+  - Blended voices: Use "voice1:weight,voice2:weight" format for 2-way blend
+  - Multi-way blended voices: Use "voice1:weight,voice2:weight,voice3:weight,..." format for 3+ way blends
 - `--split-output <dir>`: Save each chunk as separate file in directory
 - `--format <str>`: Audio format: wav or mp3 (default: wav)
 - `--debug`: Show detailed debug information during processing
@@ -218,6 +219,9 @@ kokoro-tts input.txt output.wav --voice "af_sarah:60,am_adam:40"
 
 # Use equal voice blend (50-50)
 kokoro-tts input.txt --stream --voice "am_adam,af_sarah"
+
+# Use multi-way voice blend (40-35-25 mix of three voices)
+kokoro-tts input.txt --stream --voice "am_adam:40,af_sarah:35,bf_emma:25"
 
 # Process EPUB and split into chunks
 kokoro-tts input.epub --split-output ./chunks/ --format mp3
