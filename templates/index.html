@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kokoro Desktop - Modern Web Interface</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: none;
+        }
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+        .btn-outline-primary {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        .btn-outline-primary:hover {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .voice-selector {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .voice-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .voice-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+        .progress-container {
+            margin-top: 20px;
+        }
+        .audio-player {
+            width: 100%;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="header text-center py-4 mb-5">
+            <h1 class="display-4 fw-bold text-white">Kokoro Desktop</h1>
+            <p class="lead text-white">Modern Text-to-Speech with Multi-Voice Blending</p>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card p-4">
+                    <h3 class="mb-4">Text to Speech Converter</h3>
+                    
+                    <!-- Text Input -->
+                    <div class="mb-4">
+                        <label for="textInput" class="form-label">Enter your text:</label>
+                        <textarea class="form-control" id="textInput" rows="6" placeholder="Type or paste your text here..."></textarea>
+                    </div>
+                    
+                    <!-- Voice Selection -->
+                    <div class="mb-4">
+                        <label class="form-label">Voice Configuration:</label>
+                        
+                        <!-- Single Voice vs Multi-Voice Toggle -->
+                        <div class="mb-3">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="voiceMode" id="singleVoice" value="single" checked>
+                                <label class="form-check-label" for="singleVoice">Single Voice</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="voiceMode" id="multiVoice" value="multi">
+                                <label class="form-check-label" for="multiVoice">Multi-Voice Blend</label>
+                            </div>
+                        </div>
+                        
+                        <!-- Single Voice Selector -->
+                        <div id="singleVoiceSection">
+                            <select class="form-select" id="voiceSelect">
+                                <option value="">Loading voices...</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Multi-Voice Section -->
+                        <div id="multiVoiceSection" style="display: none;">
+                            <div id="voiceBlendingControls">
+                                <!-- Voice blending controls will be added dynamically -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="addVoiceControl()">+ Add Voice</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="normalizeWeights()">Normalize Weights</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Language and Speed -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="languageSelect" class="form-label">Language:</label>
+                            <select class="form-select" id="languageSelect">
+                                <option value="en-us">English (US)</option>
+                                <option value="en-gb">English (GB)</option>
+                                <option value="fr-fr">French</option>
+                                <option value="it">Italian</option>
+                                <option value="ja">Japanese</option>
+                                <option value="cmn">Chinese (Mandarin)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="speedSlider" class="form-label">Speed: <span id="speedValue">1.0</span>x</label>
+                            <input type="range" class="form-range" id="speedSlider" min="0.5" max="2.0" step="0.1" value="1.0">
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-primary flex-fill" id="previewBtn">
+                            <i class="fas fa-play"></i> Preview
+                        </button>
+                        <button type="button" class="btn btn-primary flex-fill" id="convertBtn">
+                            <i class="fas fa-bolt"></i> Convert & Download
+                        </button>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="progress-container" style="display: none;" id="progressContainer">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                        </div>
+                        <p class="text-center mt-2" id="progressText">Processing...</p>
+                    </div>
+                    
+                    <!-- Audio Player -->
+                    <div id="audioPlayerContainer" style="display: none;">
+                        <label class="form-label">Audio Preview:</label>
+                        <audio class="audio-player" id="audioPlayer" controls></audio>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script>
+        // DOM Elements
+        const voiceModeRadios = document.querySelectorAll('input[name="voiceMode"]');
+        const singleVoiceSection = document.getElementById('singleVoiceSection');
+        const multiVoiceSection = document.getElementById('multiVoiceSection');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const languageSelect = document.getElementById('languageSelect');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const textInput = document.getElementById('textInput');
+        const previewBtn = document.getElementById('previewBtn');
+        const convertBtn = document.getElementById('convertBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressText = document.getElementById('progressText');
+        const audioPlayerContainer = document.getElementById('audioPlayerContainer');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const voiceBlendingControls = document.getElementById('voiceBlendingControls');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadVoices();
+            setupEventListeners();
+        });
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Voice mode toggle
+            voiceModeRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'single') {
+                        singleVoiceSection.style.display = 'block';
+                        multiVoiceSection.style.display = 'none';
+                    } else {
+                        singleVoiceSection.style.display = 'none';
+                        multiVoiceSection.style.display = 'block';
+                    }
+                });
+            });
+
+            // Speed slider
+            speedSlider.addEventListener('input', function() {
+                speedValue.textContent = this.value;
+            });
+
+            // Button clicks
+            previewBtn.addEventListener('click', handlePreview);
+            convertBtn.addEventListener('click', handleConvert);
+        }
+
+        // Load available voices
+        function loadVoices() {
+            fetch('/api/voices')
+                .then(response => response.json())
+                .then(data => {
+                    const voices = data.voices;
+                    voiceSelect.innerHTML = '';
+                    
+                    voices.forEach(voice => {
+                        const option = document.createElement('option');
+                        option.value = voice;
+                        option.textContent = voice;
+                        voiceSelect.appendChild(option);
+                    });
+                    
+                    // Add default option if no voices loaded
+                    if (voices.length === 0) {
+                        voiceSelect.innerHTML = '<option value="">No voices available</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading voices:', error);
+                    voiceSelect.innerHTML = '<option value="">Error loading voices</option>';
+                });
+        }
+
+        // Add voice control for multi-voice blending
+        function addVoiceControl(index = null, voice = '', weight = 50) {
+            const voiceIndex = index !== null ? index : document.querySelectorAll('.voice-item').length;
+            const voiceItem = document.createElement('div');
+            voiceItem.className = 'voice-item';
+            voiceItem.id = `voice-${voiceIndex}`;
+            
+            voiceItem.innerHTML = `
+                <div class="voice-controls">
+                    <select class="form-select form-select-sm voice-select" data-index="${voiceIndex}">
+                        <option value="">Select voice...</option>
+                    </select>
+                    <span>Weight:</span>
+                    <input type="number" class="form-control form-control-sm weight-input" value="${weight}" min="0" max="100" style="width: 80px;" data-index="${voiceIndex}">
+                    <span>%</span>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeVoiceControl(${voiceIndex})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            voiceBlendingControls.appendChild(voiceItem);
+            
+            // Populate voice options
+            const voiceSelectElement = voiceItem.querySelector('.voice-select');
+            document.querySelectorAll('#voiceSelect option').forEach(option => {
+                if (option.value) {
+                    const newOption = document.createElement('option');
+                    newOption.value = option.value;
+                    newOption.textContent = option.textContent;
+                    if (option.value === voice) {
+                        newOption.selected = true;
+                    }
+                    voiceSelectElement.appendChild(newOption);
+                }
+            });
+        }
+
+        // Remove voice control
+        function removeVoiceControl(index) {
+            const element = document.getElementById(`voice-${index}`);
+            if (element) {
+                element.remove();
+            }
+        }
+
+        // Normalize weights to sum to 100%
+        function normalizeWeights() {
+            const weightInputs = document.querySelectorAll('.weight-input');
+            const total = Array.from(weightInputs).reduce((sum, input) => sum + parseFloat(input.value || 0), 0);
+            
+            if (total === 0) return;
+            
+            const factor = 100 / total;
+            weightInputs.forEach(input => {
+                const newValue = parseFloat(input.value || 0) * factor;
+                input.value = Math.round(newValue * 10) / 10; // Round to 1 decimal
+            });
+        }
+
+        // Get selected voice (single or multi-blend)
+        function getSelectedVoice() {
+            const mode = document.querySelector('input[name="voiceMode"]:checked').value;
+            
+            if (mode === 'single') {
+                return voiceSelect.value;
+            } else {
+                // Multi-voice blend
+                const voiceControls = document.querySelectorAll('.voice-item');
+                const blendParts = [];
+                
+                voiceControls.forEach(control => {
+                    const voiceSelect = control.querySelector('.voice-select');
+                    const weightInput = control.querySelector('.weight-input');
+                    
+                    if (voiceSelect.value && weightInput.value) {
+                        blendParts.push(`${voiceSelect.value}:${weightInput.value}`);
+                    }
+                });
+                
+                return blendParts.join(',');
+            }
+        }
+
+        // Show progress
+        function showProgress(message = 'Processing...') {
+            progressText.textContent = message;
+            progressContainer.style.display = 'block';
+            audioPlayerContainer.style.display = 'none';
+        }
+
+        // Hide progress
+        function hideProgress() {
+            progressContainer.style.display = 'none';
+        }
+
+        // Play audio
+        function playAudio(audioData) {
+            const binaryData = Uint8Array.from(atob(audioData), c => c.charCodeAt(0));
+            const blob = new Blob([binaryData], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+            
+            audioPlayer.src = url;
+            audioPlayerContainer.style.display = 'block';
+            
+            // Auto-play
+            setTimeout(() => {
+                audioPlayer.play().catch(e => console.log('Auto-play prevented:', e));
+            }, 100);
+        }
+
+        // Handle preview
+        function handlePreview() {
+            const text = textInput.value.trim();
+            if (!text) {
+                alert('Please enter some text to convert.');
+                return;
+            }
+            
+            const voice = getSelectedVoice();
+            if (!voice) {
+                alert('Please select a voice.');
+                return;
+            }
+            
+            showProgress('Generating audio preview...');
+            
+            fetch('/api/convert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: text,
+                    voice: voice,
+                    speed: parseFloat(speedSlider.value),
+                    language: languageSelect.value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideProgress();
+                
+                if (data.success) {
+                    playAudio(data.audio_data);
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                hideProgress();
+                alert('Error: ' + error.message);
+                console.error('Error:', error);
+            });
+        }
+
+        // Handle convert and download
+        function handleConvert() {
+            const text = textInput.value.trim();
+            if (!text) {
+                alert('Please enter some text to convert.');
+                return;
+            }
+            
+            const voice = getSelectedVoice();
+            if (!voice) {
+                alert('Please select a voice.');
+                return;
+            }
+            
+            showProgress('Converting and preparing download...');
+            
+            fetch('/api/convert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: text,
+                    voice: voice,
+                    speed: parseFloat(speedSlider.value),
+                    language: languageSelect.value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideProgress();
+                
+                if (data.success) {
+                    // Create download link
+                    const binaryData = Uint8Array.from(atob(data.audio_data), c => c.charCodeAt(0));
+                    const blob = new Blob([binaryData], { type: data.format });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'kokoro-audio.wav';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    playAudio(data.audio_data);
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                hideProgress();
+                alert('Error: ' + error.message);
+                console.error('Error:', error);
+            });
+        }
+
+        // Initialize with one voice control for multi-voice mode
+        window.onload = function() {
+            addVoiceControl(0, '', 50);
+        };
+    </script>
+</body>
+</html>

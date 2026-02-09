@@ -147,7 +147,7 @@ def validate_language(lang, kokoro):
 
 def print_usage():
     print("""
-Usage: kokoro-tts <input_text_file> [<output_audio_file>] [options]
+Usage: kokoro-desktop <input_text_file> [<output_audio_file>] [options]
 
 Commands:
     -h, --help         Show this help message
@@ -172,20 +172,20 @@ Input formats:
     .pdf               PDF document input (extracts chapters from TOC or content)
 
 Examples:
-    kokoro-tts input.txt output.wav --speed 1.2 --lang en-us --voice af_sarah
-    kokoro-tts input.epub --split-output ./chunks/ --format mp3
-    kokoro-tts input.pdf output.wav --speed 1.2 --lang en-us --voice af_sarah
-    kokoro-tts input.pdf --split-output ./chunks/ --format mp3
-    kokoro-tts input.txt --stream --speed 0.8
-    kokoro-tts input.txt output.wav --voice "af_sarah:60,am_adam:40"
-    kokoro-tts input.txt --stream --voice "am_adam,af_sarah" # 50-50 blend
-    kokoro-tts input.txt --stream --voice "am_adam:40,af_sarah:35,en_alice:25" # 3-way blend
-    kokoro-tts --merge-chunks --split-output ./chunks/ --format wav
-    kokoro-tts --help-voices
-    kokoro-tts --help-languages
-    kokoro-tts input.epub --split-output ./chunks/ --debug
-    kokoro-tts input.txt output.wav --model /path/to/model.onnx --voices /path/to/voices.bin
-    kokoro-tts input.txt --model ./models/kokoro-v1.0.onnx --voices ./models/voices-v1.0.bin
+    kokoro-desktop input.txt output.wav --speed 1.2 --lang en-us --voice af_sarah
+    kokoro-desktop input.epub --split-output ./chunks/ --format mp3
+    kokoro-desktop input.pdf output.wav --speed 1.2 --lang en-us --voice af_sarah
+    kokoro-desktop input.pdf --split-output ./chunks/ --format mp3
+    kokoro-desktop input.txt --stream --speed 0.8
+    kokoro-desktop input.txt output.wav --voice "af_sarah:60,am_adam:40"
+    kokoro-desktop input.txt --stream --voice "am_adam,af_sarah" # 50-50 blend
+    kokoro-desktop input.txt --stream --voice "am_adam:40,af_sarah:35,en_alice:25" # 3-way blend
+    kokoro-desktop --merge-chunks --split-output ./chunks/ --format wav
+    kokoro-desktop --help-voices
+    kokoro-desktop --help-languages
+    kokoro-desktop input.epub --split-output ./chunks/ --debug
+    kokoro-desktop input.txt output.wav --model /path/to/model.onnx --voices /path/to/voices.bin
+    kokoro-desktop input.txt --model ./models/kokoro-v1.0.onnx --voices ./models/voices-v1.0.bin
     """)
 
 def print_supported_languages(model_path="kokoro-v1.0.onnx", voices_path="voices-v1.0.bin"):

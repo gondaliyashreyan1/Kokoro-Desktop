@@ -2,12 +2,12 @@
 
 A CLI text-to-speech tool using the Kokoro model, supporting multiple languages, voices (with advanced multi-voice blending), and various input formats including EPUB books and PDF documents.
 
-![ngpt-s-c](https://raw.githubusercontent.com/nazdridoy/kokoro-tts/main/previews/kokoro-tts-h.png)
+![ngpt-s-c](https://raw.githubusercontent.com/gondaliyashreyan1/Kokoro-Desktop/main/previews/kokoro-tts-h.png)
 
 ## Features
 
 - Multiple language and voice support
-- Voice blending with customizable weights
+- Advanced multi-voice blending with customizable weights (3+ voices)
 - EPUB, PDF and TXT file input support
 - Standard input (stdin) and `|` piping from other programs
 - Streaming audio playback
@@ -17,10 +17,12 @@ A CLI text-to-speech tool using the Kokoro model, supporting multiple languages,
 - Chapter merging capability
 - Detailed debug output option
 - GPU Support
+- Graphical User Interface (GUI) for easy access
+- Web-based GUI with modern interface
 
 ## Demo
 
-Kokoro TTS is an open-source CLI tool that delivers high-quality text-to-speech right from your terminal. Think of it as your personal voice studio, capable of transforming any text into natural-sounding speech with minimal effort.
+Kokoro Desktop is an open-source CLI tool that delivers high-quality text-to-speech right from your terminal. Think of it as your personal voice studio, capable of transforming any text into natural-sounding speech with minimal effort.
 
 https://github.com/user-attachments/assets/8413e640-59e9-490e-861d-49187e967526
 
@@ -30,6 +32,7 @@ https://github.com/user-attachments/assets/8413e640-59e9-490e-861d-49187e967526
 
 - [x] Add GPU support
 - [x] Add PDF support
+- [x] Add multi-voice blending (3+ voices)
 - [ ] Add GUI
 
 ## Prerequisites
@@ -40,20 +43,20 @@ https://github.com/user-attachments/assets/8413e640-59e9-490e-861d-49187e967526
 
 ### Method 1: Install from PyPI (Recommended)
 
-The easiest way to install Kokoro TTS is from PyPI:
+The easiest way to install Kokoro Desktop is from PyPI:
 
 ```bash
 # Using uv (recommended)
-uv tool install kokoro-tts
+uv tool install kokoro-desktop
 
 # Using pip
-pip install kokoro-tts
+pip install kokoro-desktop
 ```
 
 After installation, you can run:
-```bash
-kokoro-tts --help
-```
+- Command line: `kokoro-desktop --help`
+- Desktop GUI: `kokoro-desktop-gui`
+- Web GUI: `kokoro-web`
 
 ### Method 2: Install from Git
 
@@ -61,18 +64,18 @@ Install directly from the repository:
 
 ```bash
 # Using uv (recommended)
-uv tool install git+https://github.com/nazdridoy/kokoro-tts
+uv tool install git+https://github.com/gondaliyashreyan1/Kokoro-Desktop
 
 # Using pip
-pip install git+https://github.com/nazdridoy/kokoro-tts
+pip install git+https://github.com/gondaliyashreyan1/Kokoro-Desktop
 ```
 
 ### Method 3: Clone and Install Locally
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/nazdridoy/kokoro-tts.git
-cd kokoro-tts
+git clone https://github.com/gondaliyashreyan1/Kokoro-Desktop.git
+cd Kokoro-Desktop
 ```
 
 2. Install the package:
@@ -93,10 +96,10 @@ pip install -e .
 3. Run the tool:
 ```bash
 # If using uv
-uv run kokoro-tts --help
+uv run kokoro-desktop --help
 
 # If using pip with activated venv
-kokoro-tts --help
+kokoro-desktop --help
 ```
 
 ### Method 4: Run Without Installation
@@ -105,8 +108,8 @@ If you prefer to run without installing:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/nazdridoy/kokoro-tts.git
-cd kokoro-tts
+git clone https://github.com/gondaliyashreyan1/Kokoro-Desktop.git
+cd Kokoro-Desktop
 ```
 
 2. Install dependencies only:
@@ -145,7 +148,7 @@ wget https://github.com/nazdridoy/kokoro-tts/releases/download/v1.0.0/voices-v1.
 wget https://github.com/nazdridoy/kokoro-tts/releases/download/v1.0.0/kokoro-v1.0.onnx
 ```
 
-> The script requires `voices-v1.0.bin` and `kokoro-v1.0.onnx` to be present in the same directory where you run the `kokoro-tts` command.
+> The script requires `voices-v1.0.bin` and `kokoro-v1.0.onnx` to be present in the same directory where you run the `kokoro-desktop` command.
 
 ## Supported voices:
 
@@ -164,12 +167,12 @@ wget https://github.com/nazdridoy/kokoro-tts/releases/download/v1.0.0/kokoro-v1.
 ### Basic Usage
 
 ```bash
-kokoro-tts <input_text_file> [<output_audio_file>] [options]
+kokoro-desktop <input_text_file> [<output_audio_file>] [options]
 ```
 
 > [!NOTE]
-> - If you installed via Method 1 (PyPI) or Method 2 (git install), use `kokoro-tts` directly
-> - If you installed via Method 3 (local install), use `uv run kokoro-tts` or activate your virtual environment first
+> - If you installed via Method 1 (PyPI) or Method 2 (git install), use `kokoro-desktop` directly
+> - If you installed via Method 3 (local install), use `uv run kokoro-desktop` or activate your virtual environment first
 > - If you're using Method 4 (no install), use `uv run -m kokoro_tts` or `python -m kokoro_tts` with activated venv
 
 ### Commands
@@ -203,51 +206,60 @@ kokoro-tts <input_text_file> [<output_audio_file>] [options]
 
 ```bash
 # Basic usage with output file
-kokoro-tts input.txt output.wav --speed 1.2 --lang en-us --voice af_sarah
+kokoro-desktop input.txt output.wav --speed 1.2 --lang en-us --voice af_sarah
 
 # Read from standard input (stdin)
-echo "Hello World" | kokoro-tts - --stream
-cat input.txt | kokoro-tts - output.wav
+echo "Hello World" | kokoro-desktop - --stream
+cat input.txt | kokoro-desktop - output.wav
 
 # Cross-platform stdin support:
-# Linux/macOS: echo "text" | kokoro-tts - --stream
-# Windows: echo "text" | kokoro-tts - --stream
-# All platforms also support: kokoro-tts /dev/stdin --stream (Linux/macOS) or kokoro-tts CONIN$ --stream (Windows)
+# Linux/macOS: echo "text" | kokoro-desktop - --stream
+# Windows: echo "text" | kokoro-desktop - --stream
+# All platforms also support: kokoro-desktop /dev/stdin --stream (Linux/macOS) or kokoro-desktop CONIN$ --stream (Windows)
 
 # Use voice blending (60-40 mix)
-kokoro-tts input.txt output.wav --voice "af_sarah:60,am_adam:40"
+kokoro-desktop input.txt output.wav --voice "af_sarah:60,am_adam:40"
 
 # Use equal voice blend (50-50)
-kokoro-tts input.txt --stream --voice "am_adam,af_sarah"
+kokoro-desktop input.txt --stream --voice "am_adam,af_sarah"
 
 # Use multi-way voice blend (40-35-25 mix of three voices)
-kokoro-tts input.txt --stream --voice "am_adam:40,af_sarah:35,bf_emma:25"
+kokoro-desktop input.txt --stream --voice "am_adam:40,af_sarah:35,bf_emma:25"
+
+# Use 4-way voice blend (30-25-25-20 mix of four voices)
+kokoro-desktop input.txt --stream --voice "am_adam:30,af_sarah:25,bf_emma:25,zf_xiaoxiao:20"
 
 # Process EPUB and split into chunks
-kokoro-tts input.epub --split-output ./chunks/ --format mp3
+kokoro-desktop input.epub --split-output ./chunks/ --format mp3
 
 # Stream audio directly
-kokoro-tts input.txt --stream --speed 0.8
+kokoro-desktop input.txt --stream --speed 0.8
 
 # Merge existing chunks
-kokoro-tts --merge-chunks --split-output ./chunks/ --format wav
+kokoro-desktop --merge-chunks --split-output ./chunks/ --format wav
 
 # Process EPUB with detailed debug output
-kokoro-tts input.epub --split-output ./chunks/ --debug
+kokoro-desktop input.epub --split-output ./chunks/ --debug
 
 # Process PDF and split into chapters
-kokoro-tts input.pdf --split-output ./chunks/ --format mp3
+kokoro-desktop input.pdf --split-output ./chunks/ --format mp3
 
 # List available voices
-kokoro-tts --help-voices
+kokoro-desktop --help-voices
 
 # List supported languages
-kokoro-tts --help-languages
+kokoro-desktop --help-languages
+
+# Launch Desktop GUI
+kokoro-desktop-gui
+
+# Launch Web GUI
+kokoro-web
 ```
 
 > [!TIP]
-> If you're using Method 3, replace `kokoro-tts` with `uv run kokoro-tts` in the examples above.
-> If you're using Method 4, replace `kokoro-tts` with `uv run -m kokoro_tts` or `python -m kokoro_tts` in the examples above.
+> If you're using Method 3, replace `kokoro-desktop` with `uv run kokoro-desktop` in the examples above.
+> If you're using Method 4, replace `kokoro-desktop` with `uv run -m kokoro_tts` or `python -m kokoro_tts` in the examples above.
 
 ## Features in Detail
 
@@ -260,7 +272,7 @@ kokoro-tts --help-languages
 ### Audio Processing
 - Chunks long text into manageable segments
 - Supports streaming for immediate playback
-- Voice blending with customizable mix ratios
+- Voice blending with customizable mix ratios (now supports 3+ voices)
 - Progress indicators for long processes
 - Handles interruptions gracefully
 
@@ -279,6 +291,7 @@ kokoro-tts --help-languages
 ### Input Options
 - Text file input (.txt)
 - EPUB book input (.epub)
+- PDF document input (.pdf)
 - Standard input (stdin)
 - Supports piping from other programs
 
@@ -293,3 +306,11 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Acknowledgments
 
 - [Kokoro-ONNX](https://github.com/thewh1teagle/kokoro-onnx)
+
+## Changelog
+
+### Version 2.4.0
+- Added support for multi-voice blending (3+ voices)
+- Enhanced voice blending algorithm to support unlimited voice combinations
+- Updated documentation to reflect new multi-voice capabilities
+- Rebranded from Kokoro TTS to Kokoro Desktop

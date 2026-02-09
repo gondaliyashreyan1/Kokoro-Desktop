@@ -1,6 +1,6 @@
 [project]
 name = "kokoro-desktop"
-version = "2.4.0"
+version = "2.4.1"
 description = "A CLI text-to-speech tool using the Kokoro model, supporting multiple languages, voices (with advanced multi-voice blending), and various input formats including EPUB books and PDF documents."
 readme = "README.md"
 requires-python = ">=3.9, <3.13"
@@ -30,10 +30,13 @@ dependencies = [
     "pymupdf4llm>=0.0.17",
     "sounddevice>=0.5.1",
     "soundfile>=0.13.0",
+    "flask>=2.0.0",
 ]
 
 [project.scripts]
 kokoro-desktop = "kokoro_tts:main"
+kokoro-desktop-gui = "kokoro_tts.gui:main"
+kokoro-web = "kokoro_tts.web_gui:main"
 
 [project.urls]
 Homepage = "https://github.com/gondaliyashreyan1/Kokoro-Desktop"
