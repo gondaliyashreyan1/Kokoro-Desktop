@@ -229,27 +229,6 @@ kokoro-desktop input.txt --stream --voice "am_adam:40,af_sarah:35,bf_emma:25"
 # Use 4-way voice blend (30-25-25-20 mix of four voices)
 kokoro-desktop input.txt --stream --voice "am_adam:30,af_sarah:25,bf_emma:25,zf_xiaoxiao:20"
 
-# Process EPUB and split into chunks
-kokoro-desktop input.epub --split-output ./chunks/ --format mp3
-
-# Stream audio directly
-kokoro-desktop input.txt --stream --speed 0.8
-
-# Merge existing chunks
-kokoro-desktop --merge-chunks --split-output ./chunks/ --format wav
-
-# Process EPUB with detailed debug output
-kokoro-desktop input.epub --split-output ./chunks/ --debug
-
-# Process PDF and split into chapters
-kokoro-desktop input.pdf --split-output ./chunks/ --format mp3
-
-# List available voices
-kokoro-desktop --help-voices
-
-# List supported languages
-kokoro-desktop --help-languages
-
 # Launch Desktop GUI
 kokoro-desktop-gui
 
@@ -314,3 +293,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - Enhanced voice blending algorithm to support unlimited voice combinations
 - Updated documentation to reflect new multi-voice capabilities
 - Rebranded from Kokoro TTS to Kokoro Desktop
+
+### Version 2.4.1
+- Added desktop GUI for easy access
+- Added web-based GUI with modern interface
+- Fixed voice processing for multi-voice blending
+- Implemented automatic weight normalization
