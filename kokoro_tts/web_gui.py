@@ -617,6 +617,10 @@ def get_voices():
         load_model()
     return jsonify({"voices": available_voices})
 
-if __name__ == '__main__':
+def main():
+    """Main function to run the web GUI"""
     load_model()
     app.run(debug=True, port=5001)
+
+if __name__ == '__main__':
+    main()
