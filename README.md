@@ -58,3 +58,58 @@ Kokoro Desktop
      - Python 3.9-3.12
 
     Requires model files: kokoro-v1.0.onnx and voices-v1.0.bin
+    Install 
+     Method 1: Install from PyPI (Recommended)
+
+     1 # Using uv (recommended)
+     2 uv tool install kokoro-desktop
+     3 
+     4 # Using pip
+     5 pip install kokoro-desktop
+
+    Method 2: Install from Git
+
+     1 # Using uv (recommended)
+     2 uv tool install git+https://github.com/gondaliyashreyan1/Kokoro-Desktop
+     3 
+     4 # Using pip
+     5 pip install git+https://github.com/gondaliyashreyan1/Kokoro-Desktop
+
+    Method 3: Clone and Install Locally
+
+      1 git clone https://github.com/gondaliyashreyan1/Kokoro-Desktop.git
+      2 cd Kokoro-Desktop
+      3 
+      4 # With uv (recommended):
+      5 uv venv
+      6 uv pip install -e .
+      7 
+      8 # With pip:
+      9 python -m venv .venv
+     10 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+     11 pip install -e .
+
+    Method 4: Run Without Installation
+
+      1 git clone https://github.com/gondaliyashreyan1/Kokoro-Desktop.git
+      2 cd Kokoro-Desktop
+      3 
+      4 # With uv:
+      5 uv venv
+      6 uv sync
+      7 
+      8 # With pip:
+      9 python -m venv .venv
+     10 source .venv/bin/activate
+     11 pip install -r requirements.txt
+
+    Usage
+    After installation, use the command as:
+
+     1 kokoro-desktop --help
+     After install, model files required to be in the same dir for auto detection 
+     # Download voice data (bin format is preferred)
+wget https://github.com/nazdridoy/kokoro-tts/releases/download/v1.0.0/voices-v1.0.bin
+
+# Download the model
+wget https://github.com/nazdridoy/kokoro-tts/releases/download/v1.0.0/kokoro-v1.0.onnx
