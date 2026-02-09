@@ -109,7 +109,6 @@ Kokoro Desktop
      1 kokoro-desktop --help
      After install, model files required to be in the same dir for auto detection 
      # Download voice data (bin format is preferred)
-wget https://github.com/nazdridoy/kokoro-tts/releases/download/v1.0.0/voices-v1.0.bin
-
-# Download the model
-wget https://github.com/nazdridoy/kokoro-tts/releases/download/v1.0.0/kokoro-v1.0.onnx
+     # Download the model
+        wget https://github.com/nazdridoy/kokoro-tts/releases/download/v1.0.0/voices-v1.0.bin
+        wget https://github.com/nazdridoy/kokoro-tts/releases/download/v1.0.0/kokoro-v1.0.onnx
