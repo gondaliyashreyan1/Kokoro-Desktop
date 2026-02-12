@@ -319,3 +319,11 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - Added audio effect controls to the web GUI
 - Enhanced web interface with emotion and effect selectors
 - Improved user experience with visual feedback for emotion/effect settings
+
+### Version 2.4.7
+- Replaced emotion controls with speed multiplier controls (since the model only supports speed changes)
+- Added comprehensive web application with full-featured dashboard
+- Enhanced UI with tabbed interface and professional layout
+- Added real-time model status monitoring
+- Improved voice blending controls with dynamic addition/removal
+- Added command: kokoro-app for the enhanced web application

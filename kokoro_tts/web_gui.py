@@ -337,29 +337,20 @@ HTML_TEMPLATE = '''
             weightInputs[weightInputs.length - 1].value = Math.round(lastWeight * 10) / 10;
         }
 
-        // Add emotion control to the UI
-        function setupEmotionControls() {
+        // Add speed control to the UI
+        function setupSpeedControls() {
             const settingsDiv = document.querySelector('.row.mb-4');
             if (!settingsDiv) return;
 
-            // Create emotion control row
-            const emotionRow = document.createElement('div');
-            emotionRow.className = 'row mb-4';
-            emotionRow.id = 'emotionRow';
+            // Create speed control row
+            const speedRow = document.createElement('div');
+            speedRow.className = 'row mb-4';
+            speedRow.id = 'speedRow';
 
-            emotionRow.innerHTML = `
+            speedRow.innerHTML = `
                 <div class="col-md-6">
-                    <label for="emotionSelect" class="form-label">Emotion:</label>
-                    <select class="form-select" id="emotionSelect">
-                        <option value="">No emotion (neutral)</option>
-                        <option value="happy">Happy</option>
-                        <option value="sad">Sad</option>
-                        <option value="excited">Excited</option>
-                        <option value="calm">Calm</option>
-                        <option value="angry">Angry</option>
-                        <option value="fearful">Fearful</option>
-                        <option value="surprised">Surprised</option>
-                    </select>
+                    <label for="speedMultiplier" class="form-label">Speed Multiplier: <span id="speedMultiplierValue">1.0</span>x</label>
+                    <input type="range" class="form-range" id="speedMultiplier" min="0.5" max="2.0" step="0.1" value="1.0">
                 </div>
                 <div class="col-md-6">
                     <label for="effectSelect" class="form-label">Audio Effect:</label>
@@ -375,14 +366,24 @@ HTML_TEMPLATE = '''
                 </div>
             `;
 
-            settingsDiv.parentNode.insertBefore(emotionRow, settingsDiv.nextSibling);
+            settingsDiv.parentNode.insertBefore(speedRow, settingsDiv.nextSibling);
+
+            // Add event listener for speed multiplier
+            const speedSlider = document.getElementById('speedMultiplier');
+            const speedValue = document.getElementById('speedMultiplierValue');
+
+            speedValue.textContent = speedSlider.value;
+
+            speedSlider.addEventListener('input', function() {
+                speedValue.textContent = this.value;
+            });
         }
 
-        // Get selected emotion and effect
-        function getSelectedEmotionEffect() {
-            const emotion = document.getElementById('emotionSelect')?.value || '';
+        // Get selected speed multiplier and effect
+        function getSelectedSpeedEffect() {
+            const speedMult = document.getElementById('speedMultiplier')?.value || '1.0';
             const effect = document.getElementById('effectSelect')?.value || 'none';
-            return { emotion, effect };
+            return { speedMultiplier: parseFloat(speedMult), effect };
         }
 
         // Get selected voice (single or multi-blend)
@@ -472,8 +473,10 @@ HTML_TEMPLATE = '''
                 return;
             }
 
-            // Get emotion and effect
-            const { emotion, effect } = getSelectedEmotionEffect();
+            // Get speed multiplier and effect
+            const { speedMultiplier, effect } = getSelectedSpeedEffect();
+            // Calculate final speed by multiplying the base speed with multiplier
+            const finalSpeed = parseFloat(speedSlider.value) * speedMultiplier;
 
             showProgress('Generating audio preview...');
 
@@ -485,9 +488,8 @@ HTML_TEMPLATE = '''
                 body: JSON.stringify({
                     text: text,
                     voice: voice,
-                    speed: parseFloat(speedSlider.value),
+                    speed: finalSpeed,
                     language: languageSelect.value,
-                    emotion: emotion || undefined,
                     effect: effect || undefined
                 })
             })
@@ -522,8 +524,10 @@ HTML_TEMPLATE = '''
                 return;
             }
 
-            // Get emotion and effect
-            const { emotion, effect } = getSelectedEmotionEffect();
+            // Get speed multiplier and effect
+            const { speedMultiplier, effect } = getSelectedSpeedEffect();
+            // Calculate final speed by multiplying the base speed with multiplier
+            const finalSpeed = parseFloat(speedSlider.value) * speedMultiplier;
 
             showProgress('Converting and preparing download...');
 
@@ -535,9 +539,8 @@ HTML_TEMPLATE = '''
                 body: JSON.stringify({
                     text: text,
                     voice: voice,
-                    speed: parseFloat(speedSlider.value),
+                    speed: finalSpeed,
                     language: languageSelect.value,
-                    emotion: emotion || undefined,
                     effect: effect || undefined
                 })
             })
@@ -576,7 +579,7 @@ HTML_TEMPLATE = '''
             // Wait for voices to load before adding controls
             setTimeout(function() {
                 addVoiceControl(0, '', null);
-                setupEmotionControls(); // Add emotion and effect controls
+                setupSpeedControls(); // Add speed and effect controls
             }, 1000);
         };
     </script>
@@ -630,7 +633,6 @@ def convert_text():
     voice = data.get('voice', 'af_sarah')
     speed = float(data.get('speed', 1.0))
     language = data.get('language', 'en-us')
-    emotion = data.get('emotion', None)  # New emotion parameter
     effect = data.get('effect', 'none')  # New effect parameter
 
     if not text:
@@ -648,15 +650,8 @@ def convert_text():
             from kokoro_tts import validate_voice
             processed_voice = validate_voice(voice, kokoro)
 
-        # Adjust speed based on emotion if specified
-        adjusted_speed = speed
-        if emotion:
-            from kokoro_tts import get_emotion_profile
-            emotion_profile = get_emotion_profile(emotion)
-            adjusted_speed = speed * emotion_profile["speed"]
-
         # Create audio using the processed voice
-        samples, sample_rate = kokoro.create(text, voice=processed_voice, speed=adjusted_speed, lang=language)
+        samples, sample_rate = kokoro.create(text, voice=processed_voice, speed=speed, lang=language)
 
         # Note: Actual audio effects would be applied here if the kokoro library supported them
         # For now, we pass the parameters along but the actual effects depend on the underlying library
@@ -677,7 +672,6 @@ def convert_text():
             "success": True,
             "audio_data": audio_data,
             "format": "audio/wav",
-            "emotion": emotion,
             "effect": effect
         })
 
