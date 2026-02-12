@@ -39,7 +39,7 @@ stop_spinner = False
 stop_audio = False
 
 # Define version as a variable to make updates easier
-VERSION = "2.4.5"
+VERSION = "2.4.6"
 
 # Audio effect presets
 AUDIO_EFFECTS = {

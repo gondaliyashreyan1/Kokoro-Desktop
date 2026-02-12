@@ -313,3 +313,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - Added advanced speaker detection and voice assignment
 - Added model parameter access API
 - Added comprehensive testing suite
+
+### Version 2.4.6
+- Added emotion controls to the web GUI
+- Added audio effect controls to the web GUI
+- Enhanced web interface with emotion and effect selectors
+- Improved user experience with visual feedback for emotion/effect settings

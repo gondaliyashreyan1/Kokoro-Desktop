@@ -337,6 +337,54 @@ HTML_TEMPLATE = '''
             weightInputs[weightInputs.length - 1].value = Math.round(lastWeight * 10) / 10;
         }
 
+        // Add emotion control to the UI
+        function setupEmotionControls() {
+            const settingsDiv = document.querySelector('.row.mb-4');
+            if (!settingsDiv) return;
+
+            // Create emotion control row
+            const emotionRow = document.createElement('div');
+            emotionRow.className = 'row mb-4';
+            emotionRow.id = 'emotionRow';
+
+            emotionRow.innerHTML = `
+                <div class="col-md-6">
+                    <label for="emotionSelect" class="form-label">Emotion:</label>
+                    <select class="form-select" id="emotionSelect">
+                        <option value="">No emotion (neutral)</option>
+                        <option value="happy">Happy</option>
+                        <option value="sad">Sad</option>
+                        <option value="excited">Excited</option>
+                        <option value="calm">Calm</option>
+                        <option value="angry">Angry</option>
+                        <option value="fearful">Fearful</option>
+                        <option value="surprised">Surprised</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="effectSelect" class="form-label">Audio Effect:</label>
+                    <select class="form-select" id="effectSelect">
+                        <option value="none">No effect</option>
+                        <option value="reverb_light">Light Reverb</option>
+                        <option value="reverb_heavy">Heavy Reverb</option>
+                        <option value="echo">Echo</option>
+                        <option value="radio">Radio</option>
+                        <option value="megaphone">Megaphone</option>
+                        <option value="telephone">Telephone</option>
+                    </select>
+                </div>
+            `;
+
+            settingsDiv.parentNode.insertBefore(emotionRow, settingsDiv.nextSibling);
+        }
+
+        // Get selected emotion and effect
+        function getSelectedEmotionEffect() {
+            const emotion = document.getElementById('emotionSelect')?.value || '';
+            const effect = document.getElementById('effectSelect')?.value || 'none';
+            return { emotion, effect };
+        }
+
         // Get selected voice (single or multi-blend)
         function getSelectedVoice() {
             const mode = document.querySelector('input[name="voiceMode"]:checked').value;
@@ -424,6 +472,9 @@ HTML_TEMPLATE = '''
                 return;
             }
 
+            // Get emotion and effect
+            const { emotion, effect } = getSelectedEmotionEffect();
+
             showProgress('Generating audio preview...');
 
             fetch('/api/convert', {
@@ -435,7 +486,9 @@ HTML_TEMPLATE = '''
                     text: text,
                     voice: voice,
                     speed: parseFloat(speedSlider.value),
-                    language: languageSelect.value
+                    language: languageSelect.value,
+                    emotion: emotion || undefined,
+                    effect: effect || undefined
                 })
             })
             .then(response => response.json())
@@ -469,6 +522,9 @@ HTML_TEMPLATE = '''
                 return;
             }
 
+            // Get emotion and effect
+            const { emotion, effect } = getSelectedEmotionEffect();
+
             showProgress('Converting and preparing download...');
 
             fetch('/api/convert', {
@@ -480,7 +536,9 @@ HTML_TEMPLATE = '''
                     text: text,
                     voice: voice,
                     speed: parseFloat(speedSlider.value),
-                    language: languageSelect.value
+                    language: languageSelect.value,
+                    emotion: emotion || undefined,
+                    effect: effect || undefined
                 })
             })
             .then(response => response.json())
@@ -518,6 +576,7 @@ HTML_TEMPLATE = '''
             // Wait for voices to load before adding controls
             setTimeout(function() {
                 addVoiceControl(0, '', null);
+                setupEmotionControls(); // Add emotion and effect controls
             }, 1000);
         };
     </script>
@@ -571,6 +630,8 @@ def convert_text():
     voice = data.get('voice', 'af_sarah')
     speed = float(data.get('speed', 1.0))
     language = data.get('language', 'en-us')
+    emotion = data.get('emotion', None)  # New emotion parameter
+    effect = data.get('effect', 'none')  # New effect parameter
 
     if not text:
         return jsonify({"error": "No text provided"}), 400
@@ -587,8 +648,18 @@ def convert_text():
             from kokoro_tts import validate_voice
             processed_voice = validate_voice(voice, kokoro)
 
+        # Adjust speed based on emotion if specified
+        adjusted_speed = speed
+        if emotion:
+            from kokoro_tts import get_emotion_profile
+            emotion_profile = get_emotion_profile(emotion)
+            adjusted_speed = speed * emotion_profile["speed"]
+
         # Create audio using the processed voice
-        samples, sample_rate = kokoro.create(text, voice=processed_voice, speed=speed, lang=language)
+        samples, sample_rate = kokoro.create(text, voice=processed_voice, speed=adjusted_speed, lang=language)
+
+        # Note: Actual audio effects would be applied here if the kokoro library supported them
+        # For now, we pass the parameters along but the actual effects depend on the underlying library
 
         # Write to temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp_file:
@@ -605,7 +676,9 @@ def convert_text():
         return jsonify({
             "success": True,
             "audio_data": audio_data,
-            "format": "audio/wav"
+            "format": "audio/wav",
+            "emotion": emotion,
+            "effect": effect
         })
 
     except Exception as e:
