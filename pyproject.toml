@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.9, <3.13"
 license = {text = "MIT"}
 authors = [
-    {name = "Nazmul Hossain", email = "nazdridoy@gmail.com"}
+    {name = "Shreyan Gondaliya", email = "gondaliyashreyan1@gmail.com"}
 ]
 keywords = ["text-to-speech", "tts", "kokoro", "audio", "epub", "pdf", "cli"]
 classifiers = [
