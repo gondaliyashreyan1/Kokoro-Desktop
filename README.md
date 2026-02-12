@@ -304,3 +304,12 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - Added ASCII art logo with rich formatting
 - Added version variable for easier updates
 - Included rich as dependency for enhanced visuals
+
+### Version 2.4.5
+- Added API endpoints for custom emotions and audio effects
+- Added support for registering custom emotion profiles
+- Added support for registering custom audio effects
+- Added comprehensive preset management system
+- Added advanced speaker detection and voice assignment
+- Added model parameter access API
+- Added comprehensive testing suite

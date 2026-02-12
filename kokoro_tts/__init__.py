@@ -11,6 +11,7 @@ import difflib
 import warnings
 from threading import Event
 import re
+import json
 
 # Rich imports for ASCII art
 try:
@@ -38,7 +39,183 @@ stop_spinner = False
 stop_audio = False
 
 # Define version as a variable to make updates easier
-VERSION = "2.4.4"
+VERSION = "2.4.5"
+
+# Audio effect presets
+AUDIO_EFFECTS = {
+    "none": {},
+    "reverb_light": {"reverb": 0.2},
+    "reverb_heavy": {"reverb": 0.6},
+    "echo": {"echo_delay": 0.3, "echo_decay": 0.5},
+    "radio": {"low_pass": 3000, "compression": 0.8},
+    "megaphone": {"distortion": 0.3, "high_pass": 500},
+    "telephone": {"band_pass": [300, 3400]}
+}
+
+# Emotion/Prosody mapping for voice control
+EMOTION_PROFILES = {
+    "neutral": {"speed": 1.0, "pitch": 0, "emphasis": "normal"},
+    "happy": {"speed": 1.1, "pitch": 0.2, "emphasis": "light"},
+    "sad": {"speed": 0.9, "pitch": -0.2, "emphasis": "soft"},
+    "excited": {"speed": 1.2, "pitch": 0.3, "emphasis": "strong"},
+    "calm": {"speed": 0.85, "pitch": -0.1, "emphasis": "smooth"},
+    "angry": {"speed": 1.15, "pitch": 0.15, "emphasis": "sharp"},
+    "fearful": {"speed": 0.8, "pitch": 0.25, "emphasis": "trembling"},
+    "surprised": {"speed": 1.25, "pitch": 0.4, "emphasis": "emphatic"}
+}
+
+def register_custom_emotion(name, speed=1.0, pitch=0, emphasis="normal"):
+    """
+    Register a custom emotion profile.
+
+    Args:
+        name (str): Name of the emotion
+        speed (float): Speed multiplier (e.g., 1.1 for 10% faster)
+        pitch (float): Pitch adjustment (-1 to 1)
+        emphasis (str): Emphasis style
+    """
+    EMOTION_PROFILES[name] = {
+        "speed": speed,
+        "pitch": pitch,
+        "emphasis": emphasis
+    }
+    print(f"Custom emotion '{name}' registered successfully")
+
+def register_custom_audio_effect(name, **params):
+    """
+    Register a custom audio effect.
+
+    Args:
+        name (str): Name of the effect
+        **params: Effect parameters
+    """
+    AUDIO_EFFECTS[name] = params
+    print(f"Custom audio effect '{name}' registered successfully")
+
+def get_all_emotion_profiles():
+    """Return all registered emotion profiles."""
+    return dict(EMOTION_PROFILES)
+
+def get_all_audio_effects():
+    """Return all registered audio effects."""
+    return dict(AUDIO_EFFECTS)
+
+# User settings and presets
+USER_PRESETS_FILE = os.path.expanduser("~/.kokoro-presets.json")
+
+def load_user_presets():
+    """Load user-defined voice presets from file."""
+    if os.path.exists(USER_PRESETS_FILE):
+        try:
+            with open(USER_PRESETS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_user_presets(presets):
+    """Save user-defined voice presets to file."""
+    try:
+        with open(USER_PRESETS_FILE, 'w') as f:
+            json.dump(presets, f, indent=2)
+        return True
+    except:
+        return False
+
+def get_emotion_profile(emotion):
+    """Get the profile for a specific emotion."""
+    return EMOTION_PROFILES.get(emotion, EMOTION_PROFILES["neutral"])
+
+def get_audio_effects(effect_name):
+    """Get the settings for a specific audio effect."""
+    return AUDIO_EFFECTS.get(effect_name, AUDIO_EFFECTS["none"])
+
+def detect_speakers(text):
+    """
+    Detect different speakers in text based on formatting patterns.
+    Looks for patterns like "Speaker 1:", "John said:", etc.
+    """
+    # Common speaker patterns
+    patterns = [
+        r'^(\w+)\s*:\s*(.+)',  # Speaker: text
+        r'^(.+?)\s+said\s*:\s*(.+)',  # John said: text
+        r'"(.+?)"\s*-\s*(\w+)',  # "text" - Speaker
+        r'(\w+)\s+responded\s*,?\s*"(.+)"',  # Speaker responded, "text"
+    ]
+
+    lines = text.split('\n')
+    speakers = []
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        for pattern in patterns:
+            match = re.search(pattern, line, re.IGNORECASE)
+            if match:
+                if len(match.groups()) == 2:
+                    # Pattern with speaker and text
+                    speaker = match.group(1)
+                    content = match.group(2)
+                    speakers.append((speaker, content))
+                    break
+                elif len(match.groups()) == 2 and pattern == patterns[2]:  # Special case for quote pattern
+                    content = match.group(1)
+                    speaker = match.group(2)
+                    speakers.append((speaker, content))
+                    break
+
+    return speakers
+
+def assign_voices_to_speakers(speakers, available_voices):
+    """
+    Assign different voices to different speakers.
+    """
+    speaker_voices = {}
+    voice_idx = 0
+
+    for speaker, _ in speakers:
+        if speaker not in speaker_voices:
+            if voice_idx < len(available_voices):
+                speaker_voices[speaker] = available_voices[voice_idx]
+                voice_idx += 1
+            else:
+                # If we run out of voices, cycle through available ones
+                speaker_voices[speaker] = available_voices[voice_idx % len(available_voices)]
+
+    return speaker_voices
+
+def process_multispeaker_text(text, kokoro, default_voice="af_sarah", speed=1.0, lang="en-us"):
+    """
+    Process text with multiple speakers, assigning different voices to each speaker.
+    """
+    speakers = detect_speakers(text)
+
+    if not speakers:
+        # If no speakers detected, use default processing
+        samples, sample_rate = kokoro.create(text, voice=default_voice, speed=speed, lang=lang)
+        return samples, sample_rate
+
+    # Get available voices to assign to speakers
+    available_voices = list(kokoro.get_voices())
+    speaker_voices = assign_voices_to_speakers(speakers, available_voices)
+
+    all_samples = []
+    sample_rate = None
+
+    for speaker, content in speakers:
+        voice = speaker_voices.get(speaker, default_voice)
+        print(f"Processing '{speaker}' with voice: {voice}")
+
+        speaker_samples, sr = kokoro.create(content, voice=voice, speed=speed, lang=lang)
+
+        if sample_rate is None:
+            sample_rate = sr
+
+        all_samples.extend(speaker_samples)
+
+    return all_samples, sample_rate
 
 def print_gradient_logo():
     """Print the Kokoro Desktop ASCII art logo with gradient colors."""
@@ -191,6 +368,8 @@ Commands:
     -h, --help         Show this help message
     --help-languages   List all supported languages
     --help-voices      List all available voices
+    --help-emotions    List all available emotions
+    --help-effects     List all available audio effects
     --merge-chunks     Merge existing chunks in split-output directory into chapter files
 
 Options:
@@ -198,6 +377,11 @@ Options:
     --speed <float>     Set speech speed (default: 1.0)
     --lang <str>        Set language (default: en-us)
     --voice <str>       Set voice or blend voices (default: interactive selection)
+    --emotion <str>     Set emotional tone (neutral, happy, sad, excited, calm, angry, fearful, surprised)
+    --effect <str>      Apply audio effect (none, reverb_light, reverb_heavy, echo, radio, megaphone, telephone)
+    --multispeaker      Enable automatic speaker detection and voice assignment
+    --preset <str>      Load voice settings from saved preset
+    --save-preset <str> Save current voice settings as a preset
     --split-output <dir> Save each chunk as separate file in directory
     --format <str>      Audio format: wav or mp3 (default: wav)
     --debug             Show detailed debug information
@@ -211,16 +395,22 @@ Input formats:
 
 Examples:
     kokoro-desktop input.txt output.wav --speed 1.2 --lang en-us --voice af_sarah
+    kokoro-desktop input.txt output.wav --emotion happy --effect reverb_light
+    kokoro-desktop dialogue.txt output.wav --multispeaker  # Auto-assign voices to speakers
+    kokoro-desktop input.txt output.wav --voice "af_sarah:60,am_adam:40"
+    kokoro-desktop input.txt --stream --voice "am_adam,af_sarah" # 50-50 blend
+    kokoro-desktop input.txt --stream --voice "am_adam:40,af_sarah:35,en_alice:25" # 3-way blend
+    kokoro-desktop input.txt --preset dramatic_reading
+    kokoro-desktop input.txt --save-preset bedtime_story
     kokoro-desktop input.epub --split-output ./chunks/ --format mp3
     kokoro-desktop input.pdf output.wav --speed 1.2 --lang en-us --voice af_sarah
     kokoro-desktop input.pdf --split-output ./chunks/ --format mp3
     kokoro-desktop input.txt --stream --speed 0.8
-    kokoro-desktop input.txt output.wav --voice "af_sarah:60,am_adam:40"
-    kokoro-desktop input.txt --stream --voice "am_adam,af_sarah" # 50-50 blend
-    kokoro-desktop input.txt --stream --voice "am_adam:40,af_sarah:35,en_alice:25" # 3-way blend
     kokoro-desktop --merge-chunks --split-output ./chunks/ --format wav
     kokoro-desktop --help-voices
     kokoro-desktop --help-languages
+    kokoro-desktop --help-emotions
+    kokoro-desktop --help-effects
     kokoro-desktop input.epub --split-output ./chunks/ --debug
     kokoro-desktop input.txt output.wav --model /path/to/model.onnx --voices /path/to/voices.bin
     kokoro-desktop input.txt --model ./models/kokoro-v1.0.onnx --voices ./models/voices-v1.0.bin
@@ -253,6 +443,20 @@ def print_supported_voices(model_path="kokoro-v1.0.onnx", voices_path="voices-v1
     except Exception as e:
         print(f"Error loading model to get supported voices: {e}")
         sys.exit(1)
+
+def print_supported_emotions():
+    """Print all supported emotions."""
+    print("\nSupported emotions:")
+    for emotion, profile in EMOTION_PROFILES.items():
+        print(f"    {emotion}: speed={profile['speed']}, pitch={profile['pitch']}, emphasis={profile['emphasis']}")
+    print()
+
+def print_supported_effects():
+    """Print all supported audio effects."""
+    print("\nSupported audio effects:")
+    for effect, settings in AUDIO_EFFECTS.items():
+        print(f"    {effect}: {settings}")
+    print()
 
 def validate_voice(voice, kokoro):
     """Validate if the voice is supported and handle voice blending.
@@ -844,9 +1048,10 @@ def process_chunk_sequential(chunk: str, kokoro: Kokoro, voice: str, speed: floa
         
         return None, None
 
-def convert_text_to_audio(input_file, output_file=None, voice=None, speed=1.0, lang="en-us", 
+def convert_text_to_audio(input_file, output_file=None, voice=None, speed=1.0, lang="en-us",
                          stream=False, split_output=None, format="wav", debug=False, stdin_indicators=None,
-                         model_path="kokoro-v1.0.onnx", voices_path="voices-v1.0.bin"):
+                         model_path="kokoro-v1.0.onnx", voices_path="voices-v1.0.bin", emotion=None,
+                         audio_effect="none", multispeaker=False):
     global stop_spinner
     
     # Define stdin indicators if not provided
@@ -1075,10 +1280,23 @@ def convert_text_to_audio(input_file, output_file=None, voice=None, speed=1.0, l
                     spinner_thread.start()
                     
                     try:
-                        samples, sr = process_chunk_sequential(
-                            chunk, kokoro, voice, speed, lang,
-                            retry_count=0, debug=debug  # Add retry parameters
-                        )
+                        # Adjust speed based on emotion if specified
+                        adjusted_speed = speed
+                        if emotion:
+                            emotion_profile = get_emotion_profile(emotion)
+                            adjusted_speed *= emotion_profile["speed"]
+
+                        # Process based on whether multispeaker mode is enabled
+                        if multispeaker:
+                            samples, sample_rate = process_multispeaker_text(
+                                chunk, kokoro, voice, adjusted_speed, lang
+                            )
+                        else:
+                            samples, sr = process_chunk_sequential(
+                                chunk, kokoro, voice, adjusted_speed, lang,
+                                retry_count=0, debug=debug  # Add retry parameters
+                            )
+
                         if samples is not None:
                             if sample_rate is None:
                                 sample_rate = sr
@@ -1325,29 +1543,35 @@ def main():
         # For help commands, we need to parse model/voices paths first
         model_path = "kokoro-v1.0.onnx"  # default model path
         voices_path = "voices-v1.0.bin"  # default voices path
-        
+
         # Parse model/voices paths for help commands
         for i, arg in enumerate(sys.argv):
             if arg == '--model' and i + 1 < len(sys.argv):
                 model_path = sys.argv[i + 1]
             elif arg == '--voices' and i + 1 < len(sys.argv):
                 voices_path = sys.argv[i + 1]
-        
+
         print_supported_languages(model_path, voices_path)
         sys.exit(0)
     elif '--help-voices' in sys.argv:
         # For help commands, we need to parse model/voices paths first
         model_path = "kokoro-v1.0.onnx"  # default model path
         voices_path = "voices-v1.0.bin"  # default voices path
-        
+
         # Parse model/voices paths for help commands
         for i, arg in enumerate(sys.argv):
             if arg == '--model' and i + 1 < len(sys.argv):
                 model_path = sys.argv[i + 1]
             elif arg == '--voices' and i + 1 < len(sys.argv):
                 voices_path = sys.argv[i + 1]
-        
+
         print_supported_voices(model_path, voices_path)
+        sys.exit(0)
+    elif '--help-emotions' in sys.argv:
+        print_supported_emotions()
+        sys.exit(0)
+    elif '--help-effects' in sys.argv:
+        print_supported_effects()
         sys.exit(0)
     
     # Parse arguments
@@ -1367,6 +1591,10 @@ def main():
     merge_chunks = '--merge-chunks' in sys.argv
     model_path = "kokoro-v1.0.onnx"  # default model path
     voices_path = "voices-v1.0.bin"  # default voices path
+    emotion = None  # default emotion
+    audio_effect = "none"  # default audio effect
+    multispeaker = False  # default multispeaker mode
+    preset_name = None  # default preset name
     
     # Parse optional arguments
     for i, arg in enumerate(sys.argv):
@@ -1380,6 +1608,54 @@ def main():
             lang = sys.argv[i + 1]
         elif arg == '--voice' and i + 1 < len(sys.argv):
             voice = sys.argv[i + 1]
+        elif arg == '--emotion' and i + 1 < len(sys.argv):
+            emotion = sys.argv[i + 1]
+            if emotion not in EMOTION_PROFILES:
+                print(f"Error: Unsupported emotion: {emotion}")
+                print(f"Supported emotions are: {', '.join(EMOTION_PROFILES.keys())}")
+                sys.exit(1)
+        elif arg == '--effect' and i + 1 < len(sys.argv):
+            audio_effect = sys.argv[i + 1]
+            if audio_effect not in AUDIO_EFFECTS:
+                print(f"Error: Unsupported audio effect: {audio_effect}")
+                print(f"Supported effects are: {', '.join(AUDIO_EFFECTS.keys())}")
+                sys.exit(1)
+        elif arg == '--multispeaker':
+            multispeaker = True
+        elif arg == '--preset' and i + 1 < len(sys.argv):
+            preset_name = sys.argv[i + 1]
+            # Load preset settings
+            user_presets = load_user_presets()
+            if preset_name in user_presets:
+                preset = user_presets[preset_name]
+                # Apply preset settings
+                if 'voice' in preset:
+                    voice = preset['voice']
+                if 'speed' in preset:
+                    speed = preset['speed']
+                if 'emotion' in preset:
+                    emotion = preset['emotion']
+                if 'effect' in preset:
+                    audio_effect = preset['effect']
+            else:
+                print(f"Error: Preset '{preset_name}' not found.")
+                sys.exit(1)
+        elif arg == '--save-preset' and i + 1 < len(sys.argv):
+            preset_name = sys.argv[i + 1]
+            # Save current settings as preset
+            user_presets = load_user_presets()
+            user_presets[preset_name] = {
+                'voice': voice,
+                'speed': speed,
+                'emotion': emotion,
+                'effect': audio_effect
+            }
+            if save_user_presets(user_presets):
+                print(f"Preset '{preset_name}' saved successfully.")
+                sys.exit(0)
+            else:
+                print(f"Error: Could not save preset '{preset_name}'.")
+                sys.exit(1)
         elif arg == '--split-output' and i + 1 < len(sys.argv):
             split_output = sys.argv[i + 1]
         elif arg == '--format' and i + 1 < len(sys.argv):
@@ -1418,12 +1694,14 @@ def main():
     
     # Add debug flag
     debug = '--debug' in sys.argv
-    
-    # Convert text to audio with debug flag
-    convert_text_to_audio(input_file, output_file, voice=voice, stream=stream, 
-                         speed=speed, lang=lang, split_output=split_output, 
+
+    # Convert text to audio with all flags
+    convert_text_to_audio(input_file, output_file, voice=voice, stream=stream,
+                         speed=speed, lang=lang, split_output=split_output,
                          format=format, debug=debug, stdin_indicators=stdin_indicators,
-                         model_path=model_path, voices_path=voices_path)
+                         model_path=model_path, voices_path=voices_path,
+                         emotion=emotion, audio_effect=audio_effect,
+                         multispeaker=multispeaker)
 
 
 if __name__ == '__main__':
